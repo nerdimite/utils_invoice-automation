@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Invoice</title>
+    <style>
+      body {
+        font-family: Calibri, sans-serif;
+        margin: 40px;
+        line-height: 1.5;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 32px;
+      }
+      .invoice-number {
+        font-size: 1.125rem;
+        font-weight: bold;
+        margin: 0;
+      }
+      .date {
+        font-size: 1.125rem;
+        margin: 0;
+      }
+      .address-section {
+        margin-bottom: 20px;
+      }
+      .address-block {
+        margin-bottom: 16px;
+      }
+      .amount-section {
+        margin-bottom: 24px;
+      }
+      .bank-details {
+        margin-top: 20px;
+      }
+      .bank-title {
+        font-size: 1.125rem;
+        font-weight: bold;
+        margin-bottom: 16px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      td {
+        border: 1px solid #1a1a1a;
+        padding: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h2 class="invoice-number">Invoice No. {{ invoice_number }}</h2>
+      <p class="date"><strong>Date:</strong> {{ date }}</p>
+    </div>
+
+    <div class="address-section">
+      <p class="address-block">
+        <strong>From:</strong><br />
+        Bhavesh Laddagiri<br />
+        Phone: 8008085740
+      </p>
+
+      <p>
+        <strong>To:</strong><br />
+        CELLSTRAT INFORMATION SYSTEMS PVT LTD<br />
+        WEWORK VAISHNAVI SIGNATURE, OUTER RING ROAD,<br />
+        BELLANDUR, BANGALORE-560103, KARNATAKA
+      </p>
+    </div>
+
+    <div class="amount-section">
+      <p>
+        <strong>Work Description:</strong> Software Development Services
+      </p>
+      <p>
+        <strong>Amount:</strong> ₹ {{ amount_formatted }}/- ({{ amount_words }}
+        only)
+      </p>
+    </div>
+
+    <div class="bank-details">
+      <h3 class="bank-title">Bank Details:</h3>
+      <table>
+        <tr>
+          <td>Name of the Account Holder</td>
+          <td>Bhavesh Laddagiri</td>
+        </tr>
+        <tr>
+          <td>Name of the Bank</td>
+          <td>HDFC</td>
+        </tr>
+        <tr>
+          <td>Branch</td>
+          <td>GHAZIABAD - INDIRAPURAM</td>
+        </tr>
+        <tr>
+          <td>Account Number</td>
+          <td>50100301700751</td>
+        </tr>
+        <tr>
+          <td>IFSC Code</td>
+          <td>HDFC0000590</td>
+        </tr>
+      </table>
+    </div>
+  </body>
+</html>

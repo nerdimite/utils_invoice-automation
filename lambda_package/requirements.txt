@@ -1,0 +1,10 @@
+Jinja2==3.1.2
+num2words==0.5.12
+pdfkit==1.0.0
+python-dotenv==1.0.0
+pytz==2023.3 
+openai==1.57.0
+python-dateutil
+boto3==1.26.137
+pydantic==2.10.3
+# sudo apt-get install wkhtmltopdf
