@@ -2,19 +2,18 @@ import email
 import imaplib
 import os
 import smtplib
-from datetime import datetime
+from datetime import datetime, timedelta
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import pytz
-from dateutil.relativedelta import relativedelta
 
 subject_template = "Bhavesh's Invoice #{invoice_number} dated {invoice_date}"
 body_template = """
 Hi,
 
-Please find the attached my invoice for the month of {previous_month}.
+Please find my attached invoice dated {invoice_date}.
 
 Invoice number: {invoice_number}
 Invoice date: {invoice_date}
@@ -69,7 +68,7 @@ class EmailProcessor:
         self.smtp_port = smtp_port
         self.scan_start_time = datetime.now(pytz.UTC).replace(
             hour=0, minute=0, second=0, microsecond=0
-        )
+        ) - timedelta(days=1)
 
     def connect_imap(self):
         """
@@ -96,57 +95,55 @@ class EmailProcessor:
 
         # Search for unread emails received after scan start time
         date_str = self.scan_start_time.strftime("%d-%b-%Y")
-        search_criteria = f'(UNSEEN SINCE "{date_str}")'
-        _, message_numbers = imap.search(None, search_criteria)
 
         matching_emails = []
 
-        for num in message_numbers[0].split():
-            _, msg_data = imap.fetch(num, "(RFC822)")
-            email_body = email.message_from_bytes(msg_data[0][1])
+        # Search for each approved sender specifically
+        for sender in self.approved_senders:
+            search_criteria = f'(UNSEEN FROM "{sender}" SINCE "{date_str}")'
+            _, message_numbers = imap.search(None, search_criteria)
 
-            # Get sender's email
-            from_email = email.utils.parseaddr(email_body["From"])[1].lower()
+            for num in message_numbers[0].split():
+                _, msg_data = imap.fetch(num, "(RFC822)")
+                email_body = email.message_from_bytes(msg_data[0][1])
 
-            # Skip if sender is not in approved list
-            if from_email not in self.approved_senders:
-                print(f"Skipping email from non-approved sender: {from_email}")
-                continue
+                # Get sender's email
+                from_email = email.utils.parseaddr(email_body["From"])[1].lower()
 
-            # Get email subject
-            email_subject = email_body["Subject"]
+                # Get email subject
+                email_subject = email_body["Subject"]
 
-            # Get email date and make it timezone-aware
-            email_date_str = email_body["Date"]
-            email_date = email.utils.parsedate_to_datetime(email_date_str)
-            if email_date.tzinfo is None:
-                email_date = pytz.UTC.localize(email_date)
+                # Get email date and make it timezone-aware
+                email_date_str = email_body["Date"]
+                email_date = email.utils.parsedate_to_datetime(email_date_str)
+                if email_date.tzinfo is None:
+                    email_date = pytz.UTC.localize(email_date)
 
-            # Skip if email is older than scan start time
-            if email_date < self.scan_start_time:
-                continue
+                # Skip if email is older than scan start time
+                if email_date < self.scan_start_time:
+                    continue
 
-            # Format email date for invoice (convert to IST for display)
-            ist = pytz.timezone("Asia/Kolkata")
-            email_date_str = email_date.astimezone(ist).strftime("%d %B %Y")
+                # Format email date for invoice (convert to IST for display)
+                ist = pytz.timezone("Asia/Kolkata")
+                email_date_str = email_date.astimezone(ist).strftime("%d %B %Y")
 
-            # Extract text content
-            text_content = ""
-            if email_body.is_multipart():
-                for part in email_body.walk():
-                    if part.get_content_type() == "text/plain":
-                        text_content += part.get_payload(decode=True).decode()
-            else:
-                text_content = email_body.get_payload(decode=True).decode()
+                # Extract text content
+                text_content = ""
+                if email_body.is_multipart():
+                    for part in email_body.walk():
+                        if part.get_content_type() == "text/plain":
+                            text_content += part.get_payload(decode=True).decode()
+                else:
+                    text_content = email_body.get_payload(decode=True).decode()
 
-            matching_emails.append(
-                {
-                    "from_email": from_email,
-                    "date": email_date_str,
-                    "subject": email_subject,
-                    "body_text": text_content,
-                }
-            )
+                matching_emails.append(
+                    {
+                        "from_email": from_email,
+                        "date": email_date_str,
+                        "subject": email_subject,
+                        "body_text": text_content,
+                    }
+                )
 
         return matching_emails
 
@@ -204,20 +201,17 @@ class EmailProcessor:
         Returns:
             None
         """
-        current_date = datetime.strptime(
-            invoice_params["email_params"]["date"], "%d %B %Y"
-        )
-        previous_month = (current_date - relativedelta(months=1)).strftime("%B")
 
         subject = subject_template.format(
             invoice_number=invoice_params["invoice_number"],
-            invoice_date=invoice_params["email_params"]["date"],
+            invoice_date=invoice_params["date"]
+            or invoice_params["email_params"]["date"],
         )
         body = body_template.format(
             invoice_number=invoice_params["invoice_number"],
-            invoice_date=invoice_params["email_params"]["date"],
+            invoice_date=invoice_params["date"]
+            or invoice_params["email_params"]["date"],
             invoice_amount=invoice_params["amount"],
-            previous_month=previous_month,
         )
 
         self.send_email_with_pdf(

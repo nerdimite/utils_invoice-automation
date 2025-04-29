@@ -39,6 +39,7 @@ def lambda_handler(event, context):
                 {
                     "invoice_number": next_invoice_number,
                     "amount": invoice_params.invoice_amount,
+                    "date": invoice_params.invoice_date,
                     "email_params": result,
                 }
             )
@@ -51,7 +52,7 @@ def lambda_handler(event, context):
     for invoice_params in invoice_params_list:
         invoice_path = invoice_generator.generate_invoice(
             invoice_number=invoice_params["invoice_number"],
-            date=invoice_params["email_params"]["date"],
+            date=invoice_params["date"] or invoice_params["email_params"]["date"],
             amount=invoice_params["amount"],
         )
         output_invoice_paths.append(invoice_path)

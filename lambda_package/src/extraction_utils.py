@@ -11,6 +11,9 @@ class InvoiceParams(BaseModel):
         description="Whether the email body is asking for an invoice"
     )
     invoice_amount: Optional[int] = Field(description="The amount in the invoice")
+    invoice_date: Optional[str] = Field(
+        description="The date for the invoice in format '%d %B %Y' like '30 April 2025'"
+    )
 
 
 def openai_structured_chat_completion(
@@ -60,7 +63,7 @@ class InvoiceParamExtractor:
                 Defaults to openai_structured_chat_completion.
         """
         self.llm_provider_function = llm_provider_function
-        self.system_prompt = """You will be given an email body. First check if the email body is asking for an invoice with some defined amount. If it is, extract the invoice amount. If it is not, return None for the amount."""
+        self.system_prompt = """You will be given an email body. First check if the email body is asking for an invoice with some defined amount. If it is, extract the invoice amount and the invoice date (if mentioned explicitly in the body). If it is not, return None for the amount and date can be the email date."""
 
     def extract_invoice_params(self, email_body: str) -> InvoiceParams:
         """
@@ -76,6 +79,7 @@ class InvoiceParamExtractor:
             InvoiceParams: A Pydantic model containing:
                 - is_invoice (bool): Whether the email is requesting an invoice
                 - invoice_amount (Optional[int]): The invoice amount if present
+                - invoice_date (Optional[date]): The date for the invoice if present
         """
         messages = [
             {"role": "system", "content": self.system_prompt},
